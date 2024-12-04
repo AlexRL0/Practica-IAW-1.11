@@ -6,6 +6,12 @@ set -ex
 # Importamos el archivo .env
 source .env
 
+#Actualizamos los repositorios
+apt update
+
+#Actualizamos los paquetes
+apt upgrade -y
+
 # Instalamos el servidor NFS
 apt install nfs-kernel-server -y
 
