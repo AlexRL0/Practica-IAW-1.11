@@ -34,7 +34,7 @@ La infraestructura necesaria está compuesta de cuatro máquinas virtuales, una 
 * Frontal Web 2/Cliente NFS. (Práctica-IAW-1.10-frontend2).
 * Servidor de Base de Datos MySQL. (Práctica-IAW-1.9-Backend).
 
-## 2. Creación del archivo `setup_nfs_server` para la máquina loadbalancer
+## 2. Creación del archivo `setup_nfs_server` para el servidor NFS
 
 ### Paso 1. Importamos el archivo de variables y mostramos los comandos que se van ejecutando 
 
@@ -88,28 +88,61 @@ cp ../conf/load_balancer.conf /etc/nginx/sites-available
 >/var/www/html FRONTEND_NETWORK(rw,sync,no_root_squash,no_subtree_check)
 >```
 
-### Paso 8. Modificamos el archivo copiado en la ruta correcta
+### Paso 8. Reemplazamos el valor de la plantilla de /etc/exports
 ```bash
-sed -i "s/IP_FRONTEND_1/$IP_FRONTEND_1/" /etc/nginx/sites-available/load_balancer.conf
-sed -i "s/IP_FRONTEND_2/$IP_FRONTEND_2/" /etc/nginx/sites-available/load_balancer.conf
-sed -i "s/LE_DOMAIN/$LE_DOMAIN/" /etc/nginx/sites-available/load_balancer.conf
+sed -i "s#FRONTEND_NETWORK#$FRONTEND_NETWORK#" /etc/exports
 ```
 
 > [!IMPORTANT]  
 > Las variables que irán apareciendo durante los pasos están todas definidas en el archivo `.env` y en `.env.example` se pueden ver las variables que hay que tener definidas.
 
-### Paso 9. Comprobamos que el archivo ya esté activo, y si no lo está, lo activamos
+### Paso 9. Reiniciamos el servicio de NFS
 
 ```bash
-if [ ! -f "/etc/nginx/sites-enabled/load_balancer.conf" ]; then
-ln -s /etc/nginx/sites-available/load_balancer.conf /etc/nginx/sites-enabled/
-fi
+systemctl restart nfs-kernel-server
+```
+---
+
+## 3. Creación del archivo `setup_nfs_client` para los clientes NFS
+
+### Paso 1. Importamos el archivo de variables y mostramos los comandos que se van ejecutando 
+
+```bash
+source .env
 ```
 
-### Paso 10. Reiniciamos nginx
+```bash
+set -ex
+```
+
+### Paso 2. Actualizamos los repositorios
 
 ```bash
-systemctl reload nginx
+apt update
+```
+
+### Paso 3. Actualizamos los paquetes
+
+```bash
+apt upgrade -y
+```
+
+### Paso 4. Instalamos el cliente NFS
+
+```bash
+apt install nfs-common -y
+```
+
+### Paso 5. Montamos el directorio
+
+```bash
+mount $NFS_SERVER_IP:/var/www/html /var/www/html
+```
+
+### Paso 6. Cambiamos la variable de /etc/fstab
+
+```bash
+sed -i '$a\172.31.28.95:/var/www/html /var/www/html  nfs auto,nofail,noatime,nolock,intr,tcp,actimeo=1800 0 0' /etc/fstab
 ```
 
 ## Comprobación de que el balanceador de carga funciona
