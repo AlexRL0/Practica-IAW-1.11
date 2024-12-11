@@ -6,7 +6,7 @@
 
 ![](imagenes/directorio-1.11.png)
 
-**Una vez creados los archivos y directorios, procedemos a la Implantación de Wordpress en AWS utilizando una arquitectura de tres niveles.**
+**Una vez creados los archivos y directorios, procedemos a la implantación de Wordpress en AWS utilizando una arquitectura de tres niveles.**
 
 ## Implantación de Wordpress en AWS utilizando una arquitectura de tres niveles
 
@@ -16,24 +16,25 @@
 
 Para crear el nombre de dominio en la página, tenemos que registrarnos y dirigirnos al sitio que muestra la captura y darle a **crear nombre de host**.
 
-![](imagenes/no-ip-1.10.png)
+![](imagenes/no-ip-1.11.png)
 
 Una vez dado al recuadro de crear el nombre, nos sale un asistente para poner el nombre de host que queramos, el dominio que queremos que lleve, la dirección ip de la máquina o pc que queremos que tenga ese nombre de host y el tipo de registro que queremos que lleve, en nuestro caso es el **DNS Host A**
 
-![](imagenes/no-ip2-1.10.png)
+![](imagenes/no-ip2-1.11.png)
 
-Hecho esto ya podemos automatizar el proceso de la instalación del balanceador de carga con Nginx
+Hecho esto ya podemos automatizar el proceso de la implantación de Wordpress en AWS utilizando una arquitectura de tres niveles
 
 ## 1.1 Infraestructura necesaria
 
 La infraestructura necesaria está compuesta de cuatro máquinas virtuales, una para el balanceador de carga (Load Balancer), dos como frontales web (Front-End) y una como servidor de base de datos MySQL (Back-End).
 
-* Balanceador. (esta práctica)
-* Frontal Web 1. (La de la anterior práctica. Práctica-IAW-1.9-Frontend)
-* Frontal Web 2. (esta práctica, ya que tenemos dos máquinas, la del load balancer y el frontend2)
-* Servidor de Base de Datos MySQL. (La de la anterior práctica. Práctica-IAW-1.9-Backend).
+* Servidor NFS (Esta práctica, Práctica-IAW-1.11-NFS_server)
+* Balanceador. (Práctica-IAW-1.10-LoadBalancer).
+* Frontal Web 1/Cliente NFS. (Práctica-IAW-1.9-Frontend).
+* Frontal Web 2/Cliente NFS. (Práctica-IAW-1.10-frontend2).
+* Servidor de Base de Datos MySQL. (Práctica-IAW-1.9-Backend).
 
-## 2. Creación del archivo `setup_loadbalancer` para la máquina loadbalancer
+## 2. Creación del archivo `setup_nfs_server` para la máquina loadbalancer
 
 ### Paso 1. Importamos el archivo de variables y mostramos los comandos que se van ejecutando 
 
@@ -57,47 +58,35 @@ apt update
 apt upgrade -y
 ```
 
-### Paso 4. Instalamos Nginx
+### Paso 4. Instalamos el servidor NFS
 
 ```bash
-apt install nginx -y
+apt install nfs-kernel-server -y
 ```
 
-### Paso 5. Deshabilitamos el enlace simbólico
+### Paso 5. hacemos el directorio
 
 ```bash
-unlink /etc/nginx/sites-enabled/default
+mkdir -p /var/www/html
 ```
 
-> [!IMPORTANT]  
-> Esto lo hacemos porque a continuación, vamos a crear un archivo personalizado para nuestro sitio.
-
-### Paso 6. Creamos el archivo load_balancer.conf
+### Paso 6. Modificamos el grupo y el propietario del directorio
 
 ```bash
-upstream frontend_servers {
-    server IP_FRONTEND_1;
-    server IP_FRONTEND_2;
-}
-
-server {
-    listen 80;
-    server_name LE_DOMAIN;
-
-    location / {
-        proxy_pass http://frontend_servers;
-    }
-}
+chown nobody:nogroup /var/www/html
 ```
 
-> [!IMPORTANT]  
-> Las variables que irán apareciendo durante los pasos están todas definidas en el archivo `.env` y en `.env.example` se pueden ver las variables que hay que tener definidas.
-
-### Paso 7. Copiamos el .conf a /etc/nginx/sites-available
+### Paso 7. copiamos la plantilla exports a /etc/exports
 
 ```bash
 cp ../conf/load_balancer.conf /etc/nginx/sites-available
 ```
+
+> [!IMPORTANT]  
+> El archivo `exports` lo tenemos que hacer nosotros en la carpeta `conf` y moverlo al directorio de sitios disponibles de nginx para que lo vea y lo habilite para su funcionamiento. A continuación, pongo el contenido del fichero `exports`:
+>```bash
+>/var/www/html FRONTEND_NETWORK(rw,sync,no_root_squash,no_subtree_check)
+>```
 
 ### Paso 8. Modificamos el archivo copiado en la ruta correcta
 ```bash
@@ -105,6 +94,9 @@ sed -i "s/IP_FRONTEND_1/$IP_FRONTEND_1/" /etc/nginx/sites-available/load_balance
 sed -i "s/IP_FRONTEND_2/$IP_FRONTEND_2/" /etc/nginx/sites-available/load_balancer.conf
 sed -i "s/LE_DOMAIN/$LE_DOMAIN/" /etc/nginx/sites-available/load_balancer.conf
 ```
+
+> [!IMPORTANT]  
+> Las variables que irán apareciendo durante los pasos están todas definidas en el archivo `.env` y en `.env.example` se pueden ver las variables que hay que tener definidas.
 
 ### Paso 9. Comprobamos que el archivo ya esté activo, y si no lo está, lo activamos
 
