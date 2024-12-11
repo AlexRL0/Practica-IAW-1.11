@@ -147,6 +147,10 @@ sed -i '$a\172.31.28.95:/var/www/html /var/www/html  nfs auto,nofail,noatime,nol
 
 ## Comprobación de que WordPress en la arquitectura de tres niveles funciona
 
-![](imagenes/balanceador.png)
+![](imagenes/WordPress1-1.11.png)
 
-![](imagenes/balanceador2.png)
+![](imagenes/WordPress3-1.11.png)
+
+![](imagenes/WordPress4-1.11.png)
+
+Sale el nombre de la Práctica 1.9 porque no le he cambiado el nombre a la página.
