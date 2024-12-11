@@ -145,7 +145,7 @@ mount $NFS_SERVER_IP:/var/www/html /var/www/html
 sed -i '$a\172.31.28.95:/var/www/html /var/www/html  nfs auto,nofail,noatime,nolock,intr,tcp,actimeo=1800 0 0' /etc/fstab
 ```
 
-## Comprobación de que el balanceador de carga funciona
+## Comprobación de que WordPress en la arquitectura de tres niveles funciona
 
 ![](imagenes/balanceador.png)
 
